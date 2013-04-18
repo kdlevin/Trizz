@@ -10,6 +10,16 @@ function Player(_x, _y, _color) {
     this.speed = new Vector(0, 0);
     this.moveRequest = new Vector(0, 0);
     this.pickedCube = -1;
+    this.stealingCube = -1;
+
+    this.IsPlayerOnItsField = function()
+    {
+        if(app.host)
+            return !Math.floor(2 * this.position.x / app.columns);
+        else
+            return Math.floor(2 * this.position.x / app.columns);
+
+    };
 
     this.onSpacePressed = function()
     {
@@ -22,11 +32,17 @@ function Player(_x, _y, _color) {
                 var gridOccupancy = app.cubeMgr.checkGrid(cell);
                 if(gridOccupancy != null && gridOccupancy.id != -1 && gridOccupancy.status == CubeManager.EnumGrid.HALTED)
                 {
-                    if(app.cubeMgr.cubesArray[gridOccupancy.id].isPickedByOpponent != true)
+                    if(app.cubeMgr.cubesArray[gridOccupancy.id].isPickedByOpponent != true &&
+                        (this.IsPlayerOnItsField() || app.cubeMgr.cubesArray[gridOccupancy.id].type != Cube.EnumType.NO_GRAVITY))
                     {
                         app.cubeMgr.cubesArray[gridOccupancy.id].isPickedByPlayer = true;
                         this.pickedCube = gridOccupancy.id;
                         app.socketComms.sendCubeInteraction(gridOccupancy.id, 'pick', cell.x, cell.y);
+
+                        if(!this.IsPlayerOnItsField())
+                            this.stealingCube = this.pickedCube;
+                        else
+                            this.stealingCube = -1;
                     }
                 }
             }
@@ -34,9 +50,12 @@ function Player(_x, _y, _color) {
             {
                 // Release cube
                 var cell = Vector.floor(this.position);
-                app.cubeMgr.cubesArray[this.pickedCube].isPickedByPlayer = false;
-                app.socketComms.sendCubeInteraction(this.pickedCube, 'drop', cell.x, cell.y);
-                this.pickedCube = -1;
+                if(this.stealingCube == -1 || this.IsPlayerOnItsField())
+                {
+                    app.cubeMgr.cubesArray[this.pickedCube].isPickedByPlayer = false;
+                    app.socketComms.sendCubeInteraction(this.pickedCube, 'drop', cell.x, cell.y);
+                    this.pickedCube = -1;
+                }
             }
         }
     };
@@ -74,8 +93,15 @@ function Player(_x, _y, _color) {
         if(Math.sqrt(this.speed.module()) > this.maxSpeed)
             this.speed = Vector.scalarProduct(Vector.sign(this.speed), this.maxSpeed);
 
+
+
+        // Calculate position
+        var prevPosition = Vector.copy(this.position);
+
         if(this.pickedCube != -1 && this.speed.module() != 0)
         {
+            // If the player has a cube picked and it's moving into a full cell
+            // we set the position on the leaving cell
             var cube = app.cubeMgr.cubesArray[this.pickedCube];
             var gridOccupancy = app.cubeMgr.checkGrid(cube.enteringCell());
 
@@ -84,12 +110,10 @@ function Player(_x, _y, _color) {
                 this.speed = new Vector(0, 0);
                 var lc = cube.leavingCell();
                 this.position = new Vector(lc.x + 0.5, lc.y + 0.5);
-
             }
         }
 
 
-        // Calculate position
         var delta = Vector.scalarProduct(this.speed, settings.loopPeriod / 1000);
 
         if(checkStop)
@@ -113,15 +137,31 @@ function Player(_x, _y, _color) {
             this.position.add(delta);
 
 
-        // Check board limits
-        if(this.position.x < 0.5)
+        // We only allow trespassing of the frontier between players zones
+        // if a cube is picked and is not and a NO_GRAVITY cube
+        if(this.pickedCube == -1 || app.cubeMgr.cubesArray[this.pickedCube].type == Cube.EnumType.NO_GRAVITY)
         {
-            this.position.x = 0.5;
+            if(prevPosition.x >= (app.columns / 2 + 0.5) && (app.columns / 2 + 0.5) > this.position.x)
+            {
+                this.position.x = app.columns / 2 + 0.5;
+                this.speed.x = 0;
+            }
+            if(prevPosition.x <= (app.columns / 2 - 0.5) && (app.columns / 2 - 0.5) < this.position.x)
+            {
+                this.position.x = app.columns / 2 - 0.5;
+                this.speed.x = 0;
+            }
+        }
+
+        // Check board limits. The player cannot enter the home base of the opponent
+        if(this.position.x < 0.5 + !app.host * 3)
+        {
+            this.position.x = 0.5 + !app.host * 3;
             this.speed.x = 0;
         }
-        if(this.position.x > settings.columns - 0.5)
+        if(this.position.x > settings.columns - 0.5 - app.host * 3)
         {
-            this.position.x = settings.columns - 0.5;
+            this.position.x = settings.columns - 0.5 - app.host * 3;
             this.speed.x = 0;
         }
 

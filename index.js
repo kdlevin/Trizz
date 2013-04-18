@@ -1,5 +1,5 @@
-var server = require("./server");
+var httpserver = require("./httpserver");
 var websocketserver = require("./wsserver");
 
-server.start();
+httpserver.start();
 websocketserver.start();

@@ -41,7 +41,18 @@ onSocketMessage = function(e) {
 
 var SocketComms = function() {
 
-    var socketServer = "ws://" + location.host.replace('15550', settings.portServer.toString());
+    var socketServer;
+    var host = location.host;
+    var nColon = host.indexOf(":");
+    var nSlash = host.indexOf("/");
+
+    if(nColon == -1 && nSlash == -1)
+        socketServer = "ws://" + host + ":" + settings.portServer.toString();
+    else if(nColon == -1)
+        socketServer = "ws://" + host.substring(0, nSlash) + ":" + settings.portServer.toString();
+    else
+        socketServer = "ws://" + host.substring(0, nColon) + ":" + settings.portServer.toString();
+
     this.webSocket = new WebSocket(socketServer);
     this.webSocket.onopen = onSocketOpen;
     this.webSocket.onclose = onSocketClose;
@@ -117,7 +128,7 @@ var SocketComms = function() {
         uiNone();
 
         var puzzleArray = data.puzzle;
-        if(app.state == App.EnumState.WAIT || (app.state == App.EnumState.END && this.host))
+        if(app.state == App.EnumState.WAIT || (app.state == App.EnumState.END && app.host))
         {
             // Player one
             app.host = true;
@@ -153,23 +164,32 @@ var SocketComms = function() {
 
     this.onNewCubeMessage = function(data)
     {
-        var type = data.cubetype;
+        var cubetype = data.cubetype;
+        var type;
 
-        if(type == "down")
+        if(cubetype == "down")
         {
-            app.cubeMgr.addCube(1.5, Math.floor(app.rows / 2) + 0.5, Cube.EnumType.DOWN);
-            app.cubeMgr.addCube(app.columns - 1.5, Math.floor(app.rows / 2) + 0.5, Cube.EnumType.DOWN);
+            type = Cube.EnumType.DOWN;
         }
-        else if(type == "up")
+        else if(cubetype == "up")
         {
-            app.cubeMgr.addCube(1.5, Math.floor(app.rows / 2) + 0.5, Cube.EnumType.UP);
-            app.cubeMgr.addCube(app.columns - 1.5, Math.floor(app.rows / 2) + 0.5, Cube.EnumType.UP);
+            type = Cube.EnumType.UP;
         }
-        else if(type == "nogravity")
+        else if(cubetype == "left")
         {
-            app.cubeMgr.addCube(1.5, Math.floor(app.rows / 2) + 0.5, Cube.EnumType.NO_GRAVITY);
-            app.cubeMgr.addCube(app.columns - 1.5, Math.floor(app.rows / 2) + 0.5, Cube.EnumType.NO_GRAVITY);
+            type = Cube.EnumType.LEFT;
         }
+        else if(cubetype == "right")
+        {
+            type = Cube.EnumType.RIGHT;
+        }
+        else if(cubetype == "nogravity")
+        {
+            type = Cube.EnumType.NO_GRAVITY;
+        }
+
+        app.cubeMgr.addCube(1.5, Math.floor(app.rows / 2) + 0.5, type);
+        app.cubeMgr.addCube(app.columns - 1.5, Math.floor(app.rows / 2) + 0.5, type);
 
         app.newCubeFlash();
     };

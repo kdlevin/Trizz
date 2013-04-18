@@ -33,8 +33,6 @@ function Puzzle() {
         var isRightPuzzleSolved = true;
         var i, j;
 
-        this.color = "green";
-
         // Left puzzle
         for(i = 0; i < this.columns && isLeftPuzzleSolved; i++)
         {
@@ -42,25 +40,20 @@ function Puzzle() {
             {
                 var gridOccupancy = app.cubeMgr.checkGrid({x: settings.columns / 2 - settings.puzzleColumns + i, y: j});
 
-                if(this.puzzleMatrix[i][j] == false && gridOccupancy != null)
+                if(this.puzzleMatrix[i][j] == false && (gridOccupancy != null && !gridOccupancy.ghost))
                     isLeftPuzzleSolved = false;
 
                 if(this.puzzleMatrix[i][j] == true)
                 {
-                    if(gridOccupancy == null || gridOccupancy.status != CubeManager.EnumGrid.HALTED)
+                    if(gridOccupancy == null ||
+                        gridOccupancy.status != CubeManager.EnumGrid.HALTED ||
+                        gridOccupancy.ghost)
                         isLeftPuzzleSolved = false;
                     else if(app.cubeMgr.cubesArray[gridOccupancy.id].isPickedByPlayer ||
                         app.cubeMgr.cubesArray[gridOccupancy.id].isPickedByOpponent)
                         isLeftPuzzleSolved = false;
-
-
                 }
             }
-        }
-
-        if(isLeftPuzzleSolved)
-        {
-            this.color = "red";
         }
 
         // Right puzzle
@@ -70,12 +63,14 @@ function Puzzle() {
             {
                 var gridOccupancy = app.cubeMgr.checkGrid({x: settings.columns / 2 + settings.puzzleColumns - i - 1, y: j});
 
-                if(this.puzzleMatrix[i][j] == false && gridOccupancy != null)
+                if(this.puzzleMatrix[i][j] == false && (gridOccupancy != null && !gridOccupancy.ghost))
                     isRightPuzzleSolved = false;
 
                 if(this.puzzleMatrix[i][j] == true)
                 {
-                    if(gridOccupancy == null || gridOccupancy.status != CubeManager.EnumGrid.HALTED)
+                    if(gridOccupancy == null ||
+                        gridOccupancy.status != CubeManager.EnumGrid.HALTED ||
+                        gridOccupancy.ghost)
                         isRightPuzzleSolved = false;
                     else if(app.cubeMgr.cubesArray[gridOccupancy.id].isPickedByPlayer ||
                         app.cubeMgr.cubesArray[gridOccupancy.id].isPickedByOpponent)
@@ -83,7 +78,7 @@ function Puzzle() {
                 }
             }
         }
-        
+
         if(app.host && isLeftPuzzleSolved || !(app.host) && isRightPuzzleSolved)
             app.winGame();
 

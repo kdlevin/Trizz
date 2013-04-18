@@ -102,9 +102,10 @@ function placeUI()
     var ui = $("#ui");
     ui.css('position', 'fixed');
     var padding_top = ui.css("padding-top").replace("px", "");
+    var border_width = ui.css("border-width").replace("px", "");
     var padding_left = ui.css("padding-left").replace("px", "");
 
-    var top = canvasOffset.top + canvas.height / 2 - ui.height() / 2 - padding_top;
+    var top = canvasOffset.top + canvas.height / 2 - ui.height() / 2 - padding_top - border_width;
     var left = canvasOffset.left + canvas.width / 2 - ui.width() / 2 - padding_left;
     ui.offset({top: top, left: left});
 }

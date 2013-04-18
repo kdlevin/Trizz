@@ -1,17 +1,29 @@
 var WebSocketServer = require('ws').Server;
+var port = 15560;
+var MaxSessions = 100;
 
-var sessionCounter = 1;
 var sessionMap = [];
 
 function createSession(ws) {
     // Choose free ID
-    var sessionID = sessionCounter;
-    sessionCounter++;
+    var sessionID;
+    for(sessionID = 1; sessionID <= MaxSessions; sessionID++)
+        if(sessionMap[sessionID] == null)
+            break;
 
-    sessionMap[sessionID] = new Session(sessionID, ws);
-    sessionMap[sessionID].sendWait();
-    console.log("SessionID: " + sessionID.toString() + " created");
-    return sessionID;
+
+    if(sessionID <= MaxSessions)
+    {
+        sessionMap[sessionID] = new Session(sessionID, ws);
+        sessionMap[sessionID].sendWait();
+        console.log("SessionID: " + sessionID.toString() + " created");
+        return sessionID;
+    }
+    else
+    {
+        console.log("No free sessions");
+        return 0;
+    }
 }
 
 function closeSession(sessionID, player) {
@@ -66,6 +78,7 @@ function Session(ID, _ws) {
     this.clientWS = null;
     this.playing = false;
     this.timeCount = 0;
+    this.cubesWithGravityCount = 0;
 
 
     this.join = function(_ws)
@@ -141,37 +154,60 @@ function Session(ID, _ws) {
         var cubeType;
 
         if(random < 4.5)
+        {
             cubeType = 'down';
+            this.cubesWithGravityCount++;
+        }
         else if(random < 9)
+        {
             cubeType = 'up';
+            this.cubesWithGravityCount++;
+        }
         else
+        {
             cubeType = 'nogravity';
-        
+            this.cubesWithGravityCount = 0;
+        }
+
+        // Force an "x" cube every 9
+        if(this.cubesWithGravityCount > 8)
+        {
+            cubeType = 'nogravity';
+            this.cubesWithGravityCount = 0;
+        }
+
         this.sendNewCube(cubeType);
     };
 
     this.sendStart = function()
     {
-//        var sendObj = {
-//            type: 'start',
-//            puzzle: [{x: 0, y: 3}, {x: 0, y: 4}, {x: 0, y: 5}, {x: 0, y: 6},
-//                {x: 1, y: 3},
-//                {x: 2, y: 2}, {x: 2, y: 3}, {x: 2, y: 4}, {x: 2, y: 5},
-//                {x: 3, y: 1}, {x: 3, y: 2}, {x: 3, y: 3},
-//                {x: 4, y: 2}, {x: 4, y: 3}, {x: 4, y: 4},
-//                {x: 5, y: 0}, {x: 5, y: 1}, {x: 5, y: 2}]
-//        };
+        // Generate random puzzle
+        var puzzle = new Array();
+
+        for(var x = 0; x < 6; x++)
+        {
+            var lowerLimit = Math.floor(Math.random() * 3.5 + 0.5);
+            var upperLimit = Math.floor(Math.random() * 3.5 + 3);
+
+            for(var y = lowerLimit; y <= upperLimit; y++)
+            {
+                puzzle.push({x: x, y: y});
+            }
+        }
+
         var sendObj = {
             type: 'start',
-            puzzle: [{x: 0, y: 0}, {x: 1, y: 0}]
+            puzzle: puzzle
         };
+
 
         this.hostWS.send(JSON.stringify(sendObj));
         this.clientWS.send(JSON.stringify(sendObj));
         this.playing = true;
         this.timeCount = 0;
+        this.cubesWithGravityCount = 0;
         this.newCube();
-        
+
     };
 
     this.sendWait = function()
@@ -206,7 +242,7 @@ function Session(ID, _ws) {
 
 function start() {
 
-    wss = new WebSocketServer({port: 15560});
+    wss = new WebSocketServer({port: port});
     wss.on('connection', function(ws) {
         console.log("Client connected");
 
@@ -224,6 +260,15 @@ function start() {
                 {
                     sessionID = createSession(ws);
                     player = 1;
+
+                    if(sessionID == 0)
+                    {
+                        var sendObj = {
+                            type: 'error',
+                            text: 'No free sessions'
+                        };
+                        ws.send(JSON.stringify(sendObj));
+                    }
                 }
             }
             // Join session
@@ -245,7 +290,7 @@ function start() {
                     }
                 }
                 else
-                    consoloe.log("SessionID: " + sessionID.toString() + " creator tried to join");
+                    console.log("SessionID: " + sessionID.toString() + " creator tried to join");
             }
             // Update session
             else if(data.type == "update" || data.type == "cubeinteraction")
@@ -264,7 +309,7 @@ function start() {
         });
 
     });
-    console.log("websocket server listening on 15560");
+    console.log("websocket server listening on " + port.toString());
 
     setInterval(tick, 1000);
 }

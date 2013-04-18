@@ -192,8 +192,22 @@ function Cube(_id, _column, _row, _type) {
         }
 
 
-        context.fillStyle = "grey";
+        // Check if it is a ghost cube
+        var backgroundColor, symbolcolor;
+        if(this.id % 2 == Math.floor(2* this.position.x /app.columns))
+        {
+            backgroundColor = "grey";
+            symbolcolor = "white";
+        }
+        else
+        {
+            backgroundColor = "white";
+            symbolcolor = "black";
+        }
+
         context.lineStyle = "butt";
+        context.fillStyle = backgroundColor;
+
 
 
         // Box
@@ -207,7 +221,7 @@ function Cube(_id, _column, _row, _type) {
         context.fill();
         context.closePath();
 
-        context.strokeStyle = "black";
+        context.strokeStyle = symbolcolor;
         context.lineWidth = 2;
 
         var point = new DrawVector(this.position.x, this.position.y);

@@ -60,17 +60,6 @@ var App = function(aCanvas) {
         context.strokeStyle = "black";
         context.lineWidth = 1;
 
-        if(newCubeFlashCounter != 0)
-        {
-            var NumberOfCyclesActive = 5;
-            if(Math.floor(newCubeFlashCounter / NumberOfCyclesActive) % 2)
-            {
-                context.strokeStyle = "orange";
-                context.lineWidth = 6;
-            }
-            newCubeFlashCounter--;
-        }
-
         (new DrawVector(1, Math.round(app.rows / 2 - 1))).drawBrokenLineTo(context, 1, Math.round(app.rows / 2), 0.4, 0.5);
         (new DrawVector(1, Math.round(app.rows / 2))).drawBrokenLineTo(context, 2, Math.round(app.rows / 2), 0.4, 0.5);
         (new DrawVector(2, Math.round(app.rows / 2))).drawBrokenLineTo(context, 2, Math.round(app.rows / 2 - 1), 0.4, 0.5);
@@ -87,6 +76,31 @@ var App = function(aCanvas) {
         context.strokeRect(canvasMargin, canvasMargin, app.columns * app.side, app.rows * app.side);
     };
 
+    app.drawFlashing = function()
+    {
+        if(newCubeFlashCounter != 0)
+        {
+            var NumberOfCyclesActive = 5;
+            if(Math.floor(newCubeFlashCounter / NumberOfCyclesActive) % 2)
+            {
+                context.strokeStyle = "orange";
+                context.lineWidth = 6;
+
+                (new DrawVector(1, Math.round(app.rows / 2 - 1))).drawBrokenLineTo(context, 1, Math.round(app.rows / 2), 0.4, 0.5);
+                (new DrawVector(1, Math.round(app.rows / 2))).drawBrokenLineTo(context, 2, Math.round(app.rows / 2), 0.4, 0.5);
+                (new DrawVector(2, Math.round(app.rows / 2))).drawBrokenLineTo(context, 2, Math.round(app.rows / 2 - 1), 0.4, 0.5);
+                (new DrawVector(2, Math.round(app.rows / 2 - 1))).drawBrokenLineTo(context, 1, Math.round(app.rows / 2 - 1), 0.4, 0.5);
+
+                (new DrawVector(app.columns - 2, Math.round(app.rows / 2 - 1))).drawBrokenLineTo(context, app.columns - 2, Math.round(app.rows / 2), 0.4, 0.5);
+                (new DrawVector(app.columns - 2, Math.round(app.rows / 2))).drawBrokenLineTo(context, app.columns - 1, Math.round(app.rows / 2), 0.4, 0.5);
+                (new DrawVector(app.columns - 1, Math.round(app.rows / 2))).drawBrokenLineTo(context, app.columns - 1, Math.round(app.rows / 2 - 1), 0.4, 0.5);
+                (new DrawVector(app.columns - 1, Math.round(app.rows / 2 - 1))).drawBrokenLineTo(context, app.columns - 2, Math.round(app.rows / 2 - 1), 0.4, 0.5);
+
+            }
+            newCubeFlashCounter--;
+        }
+    };
+
     app.draw = function() {
 
         app.drawBoard();
@@ -94,6 +108,7 @@ var App = function(aCanvas) {
         {
             app.puzzle.draw(context);
             app.cubeMgr.draw(context);
+            app.drawFlashing();
             app.opponent.draw(context);
             app.player.draw(context);
         }
@@ -218,6 +233,11 @@ var App = function(aCanvas) {
 
         app.currentUI = uiInit;
         uiInit();
+
+        window.onscroll = function() {
+            app.currentUI();
+        };
+
 
     })();
 };

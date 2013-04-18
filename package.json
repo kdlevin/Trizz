@@ -1,0 +1,15 @@
+{
+  "name": "Trizz",
+  "subdomain": "Trizz",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "version": "0.1.0-4",
+  "engines": {
+    "node": "0.8.x"
+  },
+  "dependencies": {
+    "connect": ">= 2.7.0",
+    "ws": ">= 0.4.0"
+  }
+}

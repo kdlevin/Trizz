@@ -23,7 +23,7 @@ function CubeManager(_columns, _rows) {
         var gridOccupancy = this.checkGrid(_v);
         if(gridOccupancy == null || gridOccupancy.id == _id ||
             (gridOccupancy.status == CubeManager.EnumGrid.ENTERING && _status != CubeManager.EnumGrid.ENTERING))
-            this.grid[_v.x][_v.y] = {id: _id, status: _status};
+            this.grid[_v.x][_v.y] = {id: _id, status: _status, ghost: (_id % 2 != Math.floor(2* _v.x /app.columns))};
     };
 
     this.resetGrid = function(_v, _id)
@@ -39,7 +39,7 @@ function CubeManager(_columns, _rows) {
         if(_v.x >= 0 && _v.x < settings.columns && _v.y >= 0 && _v.y < settings.rows)
             return this.grid[_v.x][_v.y];
         else
-            return {id: -1, status: CubeManager.EnumGrid.OUTOFGRID};
+            return {id: -1, status: CubeManager.EnumGrid.OUTOFGRID, ghost: false};
     };
 
 
@@ -51,7 +51,7 @@ function CubeManager(_columns, _rows) {
             this.cubesArray[this.cubesArray.length] = new Cube(this.cubesArray.length, v.x, v.y, _type);
         else
             this.cubesArray[this.cubesArray.length] = null; // Cube could not be created
-    }
+    };
 
 
     this.update = function()
@@ -63,12 +63,36 @@ function CubeManager(_columns, _rows) {
             if(cube != null && cube.type == Cube.EnumType.DOWN)
                 cube.update();
         }
-
-        // Then execute the rest of the cubes
+        
+        // First execute down cube to give them priority
         for(i = 0; i < this.cubesArray.length; i++)
         {
             var cube = this.cubesArray[i];
-            if(cube != null && cube.type != Cube.EnumType.DOWN)
+            if(cube != null && cube.type == Cube.EnumType.RIGHT)
+                cube.update();
+        }
+        
+        // First execute down cube to give them priority
+        for(i = 0; i < this.cubesArray.length; i++)
+        {
+            var cube = this.cubesArray[i];
+            if(cube != null && cube.type == Cube.EnumType.UP)
+                cube.update();
+        }
+        
+        // First execute down cube to give them priority
+        for(i = 0; i < this.cubesArray.length; i++)
+        {
+            var cube = this.cubesArray[i];
+            if(cube != null && cube.type == Cube.EnumType.LEFT)
+                cube.update();
+        }
+
+        // First execute down cube to give them priority
+        for(i = 0; i < this.cubesArray.length; i++)
+        {
+            var cube = this.cubesArray[i];
+            if(cube != null && cube.type == Cube.EnumType.NO_GRAVITY)
                 cube.update();
         }
     };
