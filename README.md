@@ -1,6 +1,6 @@
 Trizz
 =====
-he game is called Trizz and consists of a competition between two players to see who finishes the puzzle before.
+The game is called Trizz and consists of a competition between two players to see who finishes the puzzle before.
 To play the game you can either create or join a session. In case you create a session you need to share the session ID with you opponent. Once your opponent joins, you can start moving with the arrow keys and picking squares with the space bar. These are the rules of the game:
 
 
